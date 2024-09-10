@@ -1,27 +1,12 @@
-# 
-# GitHub Actions workflow.
-#
-# Automatically deploys the Node.js microservice to Kubernetes on push to any branch. 
-# For real use you might want to restrict this to the "prod" branch.
-#
-
 name: Deploy microservice
 
 on:
-  #
-  # Deploys the microservice on push to the main branch of this code repository.
-  #
-  push: 
+  push:
     branches:
       - main
-
-  #
-  # Allows deployment to be invoked manually through the GitHub Actions user interface.
-  #
-  workflow_dispatch: 
+  workflow_dispatch:
 
 jobs:
-
   deploy:
     runs-on: ubuntu-latest
     
@@ -29,37 +14,34 @@ jobs:
       VERSION: ${{ github.sha }}
       CONTAINER_REGISTRY: ${{ secrets.CONTAINER_REGISTRY }}
       REGISTRY_UN: ${{ secrets.REGISTRY_UN }}
-      REGISTRY_PW: ${{ secrets.REGISTRY_PW  }}
-
+      REGISTRY_PW: ${{ secrets.REGISTRY_PW }}
+    
     steps:
-      
-      # Checks-out your repository under $GITHUB_WORKSPACE.
+      # Checks out your repository under $GITHUB_WORKSPACE.
       - uses: actions/checkout@v3
 
-      #
       # Builds the Docker image.
-      #
       - name: Build
         run: ./scripts/build-image.sh
-
-      #
+      
       # Publishes the Docker image to the container registry.
-      #
       - name: Publish
         run: ./scripts/push-image.sh
 
-      #
-      # Installs Kubectl and connects it to the cluster.
-      #
-      # https://github.com/marketplace/actions/kubernetes-cli-kubectl
-      #
-      - uses: tale/kubectl-action@v1
+      # Decode the kubeconfig file and set up kubectl
+      - name: Decode kubeconfig
+        run: |
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      # Install and set up kubectl
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v2
         with:
-          base64-kube-config: ${{ secrets.KUBE_CONFIG }}
-          kubectl-version: v1.24.2
-      
-      #
-      # Expands the configuration template and deploys the microservice.
-      #
+          version: '1.29.7'
+
+      # Deploys the microservice to Kubernetes
       - name: Deploy
         run: ./scripts/deploy.sh
+        env:
+          KUBECONFIG: ~/.kube/config
