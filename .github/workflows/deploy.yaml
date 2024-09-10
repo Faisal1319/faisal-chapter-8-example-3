@@ -40,7 +40,7 @@ jobs:
 
       # Install and set up kubectl
       - name: Set up kubectl
-        uses: azure/setup-kubectl@v2
+        uses: azure/setup-kubectl@v1
         with:
           version: '1.29.7'
 
