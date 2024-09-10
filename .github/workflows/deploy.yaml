@@ -9,28 +9,30 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     env:
       VERSION: ${{ github.sha }}
       CONTAINER_REGISTRY: ${{ secrets.CONTAINER_REGISTRY }}
       REGISTRY_UN: ${{ secrets.REGISTRY_UN }}
       REGISTRY_PW: ${{ secrets.REGISTRY_PW }}
-    
+
     steps:
       # Checks out your repository under $GITHUB_WORKSPACE.
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       # Builds the Docker image.
-      - name: Build
+      - name: Build Docker image
         run: ./scripts/build-image.sh
-      
+
       # Publishes the Docker image to the container registry.
-      - name: Publish
+      - name: Publish Docker image
         run: ./scripts/push-image.sh
 
       # Decode the kubeconfig file and set up kubectl
       - name: Decode kubeconfig
         run: |
+          mkdir -p ~/.kube
           echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
           chmod 600 ~/.kube/config
 
@@ -41,7 +43,7 @@ jobs:
           version: '1.29.7'
 
       # Deploys the microservice to Kubernetes
-      - name: Deploy
+      - name: Deploy to Kubernetes
         run: ./scripts/deploy.sh
         env:
           KUBECONFIG: ~/.kube/config
