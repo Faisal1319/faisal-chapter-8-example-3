@@ -17,19 +17,19 @@ jobs:
       REGISTRY_PW: ${{ secrets.REGISTRY_PW }}
 
     steps:
-      # Checkout the code
+      # Checks out your repository under $GITHUB_WORKSPACE.
       - uses: actions/checkout@v3
 
-      # Build Docker image
+      # Builds the Docker image.
       - name: Build Docker Image
         run: ./scripts/build-image.sh
 
-      # Publish Docker image to container registry
+      # Publishes the Docker image to the container registry.
       - name: Publish Docker Image
         run: ./scripts/push-image.sh
 
       # Recombine and decode kubeconfig file
-      - name: Recombine and Decode Kubeconfig
+      - name: Recombine and decode kubeconfig
         run: |
           echo "${{ secrets.KUBE_CONFIG_PART1 }}" > ~/.kube/config
           echo "${{ secrets.KUBE_CONFIG_PART2 }}" >> ~/.kube/config
@@ -38,14 +38,14 @@ jobs:
           echo "${{ secrets.KUBE_CONFIG_PART5 }}" >> ~/.kube/config
           chmod 600 ~/.kube/config
 
-      # Install and setup kubectl
-      - name: Set Up kubectl
+      # Install and set up kubectl
+      - name: Set up kubectl
         uses: azure/setup-kubectl@v2
         with:
           version: '1.29.7'
 
-      # Deploy to Kubernetes
-      - name: Deploy to Kubernetes
+      # Deploys the microservice to Kubernetes
+      - name: Deploy
         run: ./scripts/deploy.sh
         env:
           KUBECONFIG: ~/.kube/config
