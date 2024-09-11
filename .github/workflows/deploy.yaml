@@ -20,6 +20,10 @@ jobs:
       # Checks out your repository under $GITHUB_WORKSPACE.
       - uses: actions/checkout@v3
 
+      # Set executable permissions for scripts
+      - name: Set executable permissions
+        run: chmod +x ./scripts/build-image.sh
+
       # Builds the Docker image.
       - name: Build Docker Image
         run: ./scripts/build-image.sh
@@ -40,7 +44,7 @@ jobs:
 
       # Install and set up kubectl
       - name: Set up kubectl
-        uses: azure/setup-kubectl@v1
+        uses: azure/setup-kubectl@v2
         with:
           version: '1.29.7'
 
