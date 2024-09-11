@@ -1,55 +1,38 @@
 name: Deploy microservice
 
 on:
-  push:
+  push: 
     branches:
       - main
-  workflow_dispatch:
+  workflow_dispatch: 
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    
     env:
       VERSION: ${{ github.sha }}
       CONTAINER_REGISTRY: ${{ secrets.CONTAINER_REGISTRY }}
       REGISTRY_UN: ${{ secrets.REGISTRY_UN }}
-      REGISTRY_PW: ${{ secrets.REGISTRY_PW }}
+      REGISTRY_PW: ${{ secrets.REGISTRY_PW  }}
 
     steps:
-      # Checks out your repository under $GITHUB_WORKSPACE.
       - uses: actions/checkout@v3
 
-      # Set executable permissions for scripts
+      # Ensure script files are executable
       - name: Set executable permissions
-        run: chmod +x ./scripts/build-image.sh
+        run: chmod +x ./scripts/build-image.sh ./scripts/push-image.sh ./scripts/deploy.sh
 
-      # Builds the Docker image.
-      - name: Build Docker Image
+      - name: Build
         run: ./scripts/build-image.sh
 
-      # Publishes the Docker image to the container registry.
-      - name: Publish Docker Image
+      - name: Publish
         run: ./scripts/push-image.sh
 
-      # Recombine and decode kubeconfig file
-      - name: Recombine and decode kubeconfig
-        run: |
-          echo "${{ secrets.KUBE_CONFIG_PART1 }}" > ~/.kube/config
-          echo "${{ secrets.KUBE_CONFIG_PART2 }}" >> ~/.kube/config
-          echo "${{ secrets.KUBE_CONFIG_PART3 }}" >> ~/.kube/config
-          echo "${{ secrets.KUBE_CONFIG_PART4 }}" >> ~/.kube/config
-          echo "${{ secrets.KUBE_CONFIG_PART5 }}" >> ~/.kube/config
-          chmod 600 ~/.kube/config
-
-      # Install and set up kubectl
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v1
+      - uses: tale/kubectl-action@v1
         with:
-          version: '1.29.7'
+          base64-kube-config: ${{ secrets.KUBE_CONFIG }}
+          kubectl-version: v1.24.2
 
-      # Deploys the microservice to Kubernetes
       - name: Deploy
         run: ./scripts/deploy.sh
-        env:
-          KUBECONFIG: ~/.kube/config
